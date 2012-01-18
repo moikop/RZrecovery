@@ -43,6 +43,9 @@
 #include "flashutils/flashutils.h"
 
 #include "mounts.h"
+
+#define VERSION "1.2.4"
+
 static const struct option OPTIONS[] = { 
     {"send_intent", required_argument, NULL, 's'}, 
   {"update_package", required_argument, NULL, 'u'}, 
@@ -667,8 +670,15 @@ int format_main(int argc, char** argv)
 
  char **
 prepend_title (const char **headers)
-{
+{	
    FILE * f = fopen ("/recovery.version", "r");
+   if (!f) {
+   		f = fopen("/recovery.version", "a+");
+   		fprintf(f, "%s", VERSION);
+   		fclose(f);
+		f = fopen ("/recovery.version", "r");
+	}
+   		
   char *vers = calloc (20, sizeof (char));
 
   fgets (vers, 20, f);
@@ -769,8 +779,9 @@ int compare_string (const void *a, const void *b)
 
 void prompt_and_wait ()
 {
-  char *MENU_HEADERS[] = { "Welcome to RZRecovery",
+  char *MENU_HEADERS[] = { "RZRecovery",
   "by raidzero",
+  "port by moikop",
   "",
   NULL
   };
