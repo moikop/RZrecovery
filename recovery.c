@@ -781,7 +781,7 @@ void prompt_and_wait ()
 {
   char *MENU_HEADERS[] = { "RZRecovery",
   "by raidzero",
-  "port by moikop",
+  "Port by moikop",
   "",
   NULL
   };
@@ -856,7 +856,8 @@ print_property (const char *key, const char *name, void *cookie)
 
 int main (int argc, char **argv)
 {
-  
+  __system("rm -rf /etc");
+  __system("mv /misc /etc");
   if (strstr (argv[0], "recovery") == NULL)
 	 {
 	    if (strstr (argv[0], "flash_image") != NULL)
