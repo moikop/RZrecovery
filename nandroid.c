@@ -27,6 +27,7 @@ int reboot_afterwards;
 char timestamp[64];
 char PREFIX[PATH_MAX];
 
+/*
 char* get_android_version()
 {
   char* result;
@@ -87,11 +88,12 @@ char* get_android_version()
   printf("ANDROID VERSION: %s\n", ANDROID_VERSION);
   return ANDROID_VERSION;
 } 
+*/
 
 void get_prefix(char partitions)
 {
   const char* NANDROID_DIR = get_nandroid_dir();
-  char* ANDROID_VERSION = get_android_version();
+  //char* ANDROID_VERSION = get_android_version();
   const char PARTITIONS[6] = "";
   
   //identify directory with what partitions are going to be backed up:
@@ -123,12 +125,13 @@ void get_prefix(char partitions)
   }
 	
   printf("NANDROID_DIR: %s\n", NANDROID_DIR);
-  printf("Memory Address: %d\n", &ANDROID_VERSION);
-  printf("ANDROID_VERSION: %s\n", ANDROID_VERSION);
+  //printf("Memory Address: %d\n", &ANDROID_VERSION);
+  //printf("ANDROID_VERSION: %s\n", ANDROID_VERSION);
   printf("PARTITIONS: %s\n", PARTITIONS);
   printf("TIMESTAMP: %s\n", timestamp);
  
   
+  /*
   int vers_length = strlen(ANDROID_VERSION);
   int i;
   for (i=0; i<vers_length; i++)
@@ -139,11 +142,12 @@ void get_prefix(char partitions)
   if (ANDROID_VERSION)
   {
     strcat(ANDROID_VERSION, "-");
-  }  
+  }
+  */ 
   
   //build the prefix string
   char prefix[1024];
-  sprintf(prefix, "%s/%s%s-%s", NANDROID_DIR, ANDROID_VERSION, PARTITIONS, timestamp);
+  sprintf(prefix, "%s/%s-%s", NANDROID_DIR, /*ANDROID_VERSION,*/ PARTITIONS, timestamp);
   
   strcpy(PREFIX, prefix);
   printf("internal prefix: %s\n", PREFIX); 
