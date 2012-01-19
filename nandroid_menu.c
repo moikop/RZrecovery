@@ -61,8 +61,11 @@ nandroid(const char* operation, char *subname, char partitions, int show_progres
   int sdext = partitions & SDEXT;
   int args;
 
-  if (!strcmp(operation,"backup") == 0 ) args = 6;
-  else args = 7;
+  if (!strcmp(operation,"backup") == 0 ) {
+  		args = 6;
+  } else {
+  		args = 7;
+  }
 
   if (!boot) 
   {
@@ -909,7 +912,7 @@ show_nandroid_menu ()
   };
   static char *items[] = { "Nandroid Backup",
     "Nandroid Restore",
-    "Compress existing backup",
+    "Compress backup",
     "Delete backup",
    // "Restore Clockwork backup",
     NULL

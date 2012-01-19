@@ -284,6 +284,7 @@ ensure_path_mounted (const char *path)
   if (mv)
 	  {
 	    // volume is already mounted
+	    printf("%s: %s already mounted\n", __FUNCTION__, path);
 	    return 0;
 	  }
 

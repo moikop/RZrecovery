@@ -301,7 +301,7 @@ show_mount_menu ()
    
   char** main_items = get_mount_menu_options();
   
-  static char *headers[] = { "Choose a mount or unmount option",
+  static char *headers[] = { "Choose an option",
     "",
     NULL
   };  
