@@ -44,7 +44,7 @@
 
 #include "mounts.h"
 
-#define VERSION "1.2.4"
+#define VERSION "2.1.4"
 
 static const struct option OPTIONS[] = { 
     {"send_intent", required_argument, NULL, 's'}, 
