@@ -1050,6 +1050,7 @@ int main (int argc, char **argv)
    if (status != INSTALL_SUCCESS)
   if (status != INSTALL_SUCCESS /*|| ui_text_visible() */ )
 	  {
+	  	ensure_path_mounted("/system");
 	    prompt_and_wait ();
 	  }
    
