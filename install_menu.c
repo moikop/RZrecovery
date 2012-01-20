@@ -598,7 +598,7 @@ preinstall_menu (char *filename)
   strcat (install_string, basename);
 
   char *headers[] =
-  { "Preinstall Menu", "Please make your selections.", " ", NULL
+  { "Preinstall Menu", "Make your selections.", " ", NULL
   };
   char *preinstall_opts[] =
   { 
