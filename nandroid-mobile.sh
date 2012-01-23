@@ -64,8 +64,9 @@ batteryAtLeast()
 	
 	
 	if [ "$action" != "continue" ]; then
-	  echo "* print Error: not enough battery power, need at least $REQUIREDLEVEL%."
-	  echo "* print Connect charger or USB power and try again."
+	  echo "* print Error: not enough battery power."
+	  echo "* print Need at least $REQUIREDLEVEL%."
+	  echo "* print Connect charger and try again."
 	  quit 101
 	fi
     fi
