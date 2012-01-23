@@ -98,10 +98,13 @@ int wipe_partition(char* partition, int autoaccept)
 		{
 			if (!is_path_mounted("/data")) ensure_path_mounted ("/data");
 			if (!is_path_mounted("/cache")) ensure_path_mounted("/cache");
+			if (!is_path_mounted("/sd-ext")) ensure_path_mounted("/sd-ext");
 			__system ("rm -rf /cache/dalvik-cache/*");
 			__system ("rm -rf /data/dalvik-cache/*");
+			__system ("rm -rf /sd-ext/dalvik-cache/*");
 			ensure_path_unmounted("/data");
 			ensure_path_unmounted("/cache");
+			ensure_path_unmounted("/sd-ext");
 			ui_print("Done.\n");
 			ui_reset_progress();
 			return 0;
