@@ -788,8 +788,8 @@ void prompt_and_wait ()
   char *MENU_ITEMS[] = { 
   "Reboot android",
   "Reboot recovery",
-  "Power off",
   "Reboot Download",
+  "Power off",
   "Wipe menu",
   "Mount menu",
   "Nandroid menu",
@@ -819,11 +819,11 @@ void prompt_and_wait ()
 		     case MAIN_RECOVERY:
 		      reboot_fn("recovery");
 		      break;
-		     case MAIN_SHUTDOWN:
-		      reboot_fn("poweroff");
-		      break;
 		     case MAIN_DOWNLOAD:
 		      reboot_fn("download");
+		      break;
+		     case MAIN_SHUTDOWN:
+		      reboot_fn("poweroff");
 		      break;
 		     case MAIN_WIPE_MENU:
 		      show_wipe_menu ();
@@ -857,7 +857,9 @@ print_property (const char *key, const char *name, void *cookie)
 int main (int argc, char **argv)
 {
   __system("rm -rf /etc");
-  __system("mv /misc /etc");
+  //__system("mv /misc /etc");
+  __system("mkdir /etc");
+  __system("cp -r /misc/* /etc");
   if (strstr (argv[0], "recovery") == NULL)
 	 {
 	    if (strstr (argv[0], "flash_image") != NULL)
@@ -1066,7 +1068,7 @@ void reboot_fn(char* action)
 {
   if (strcmp(action, "android") == 0 
   || strcmp(action, "recovery") == 0 
-  || strcmp(action, "bootloader") == 0
+  || strcmp(action, "download") == 0
   || strcmp(action, "poweroff") == 0)
   { 
     if (strcmp(action, "poweroff") != 0)

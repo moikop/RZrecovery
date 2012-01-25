@@ -63,8 +63,8 @@ int device_wipe_data ();
 
 #define MAIN_REBOOT           	0
 #define MAIN_RECOVERY	     	1
-#define MAIN_SHUTDOWN     	2
-#define MAIN_DOWNLOAD		3
+#define MAIN_DOWNLOAD		2
+#define MAIN_SHUTDOWN     	3
 #define MAIN_WIPE_MENU		4
 #define MAIN_MOUNTS		5
 #define MAIN_NANDROID		6
