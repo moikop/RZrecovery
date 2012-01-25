@@ -39,7 +39,6 @@
 #include "roots.h"
 #include "recovery_ui.h"
 #include "encryptedfs_provisioning.h"
-#include "recovery_ui.h"  
 #include "flashutils/flashutils.h"
 
 #include "mounts.h"
@@ -786,10 +785,11 @@ void prompt_and_wait ()
   NULL
   };
 
-  char *MENU_ITEMS[] = { "Reboot android",
+  char *MENU_ITEMS[] = { 
+  "Reboot android",
   "Reboot recovery",
   "Power off",
-  "Bootloader",
+  "Reboot Download",
   "Wipe menu",
   "Mount menu",
   "Nandroid menu",
@@ -822,8 +822,8 @@ void prompt_and_wait ()
 		     case MAIN_SHUTDOWN:
 		      reboot_fn("poweroff");
 		      break;
-		     case MAIN_BOOTLOADER:
-		      reboot_fn("bootloader");
+		     case MAIN_DOWNLOAD:
+		      reboot_fn("download");
 		      break;
 		     case MAIN_WIPE_MENU:
 		      show_wipe_menu ();
@@ -977,7 +977,7 @@ int main (int argc, char **argv)
 		    }
 	  }
   printf ("\n");
-  property_list (print_property, NULL);
+  //property_list (print_property, NULL);
   printf ("\n");
    int status = INSTALL_SUCCESS;
 
