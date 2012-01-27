@@ -30,7 +30,7 @@
 #include "recovery_ui.h"
   
 #define MAX_COLS 96
-#define MAX_ROWS 43
+#define MAX_ROWS 24 //43
   
 #define MENU_MAX_COLS 64
 #define MENU_MAX_ROWS 750
@@ -43,17 +43,9 @@
   
 #define TEXTCOLOR gr_color(255,255,255,255);
 
-#ifdef BOARD_HAS_NO_SELECT_BUTTON
-static int virtualBack = 1;
-#else
 static int virtualBack = 0;
-#endif
-        
-#ifdef BOARD_HAS_INVERTED_VOLUME
-static int backwardsVolume = 1;
-#else
+
 static int backwardsVolume = 0;
-#endif
 
 char* BG_ICON;
 
@@ -208,14 +200,13 @@ draw_progress_locked ()
 		      dx, dy);
 	    frame = (frame + 1) % PROGRESSBAR_INDETERMINATE_STATES;
 	  }
-}  static void
+}
 
+static void
 draw_text_line (int row, const char *t)
 {
-  if (t[0] != '\0')
-	  {
-	    gr_text (0, (row + 1) * CHAR_HEIGHT - 1, t);
-	  }
+	if (t[0] != '\0')
+		gr_text (0, (row + 1) * CHAR_HEIGHT - 1, t);
 }
 
  
@@ -585,8 +576,9 @@ ui_set_progress (float fraction)
 		    }
 	  }
   pthread_mutex_unlock (&gUpdateMutex);
-}  void
+}
 
+void
 ui_reset_progress () 
 {
   pthread_mutex_lock (&gUpdateMutex);
