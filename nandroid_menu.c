@@ -899,6 +899,9 @@ show_nandroid_adv_b_menu ()
 void
 show_nandroid_menu ()
 {
+  ensure_path_mounted("/system");
+  ensure_path_mounted("/data");
+  ensure_path_mounted("/cache");
   if (volume_present("/sd-ext"))
   {
     set_sdext();

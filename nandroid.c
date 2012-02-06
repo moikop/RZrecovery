@@ -251,7 +251,7 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
 	if (retstatus != 0)
 	{
 	  ui_print("Failed!\n");
-	  ensure_path_unmounted(partition_path);
+	  //ensure_path_unmounted(partition_path);
 	  status = -1;
 	} 
 	else
@@ -259,7 +259,7 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
 	  
 	  ui_print("Success!");
 	  ui_reset_text_col();
-	  ensure_path_unmounted(partition_path);
+	  //ensure_path_unmounted(partition_path);
 	  status = 0;
 	}
   }
@@ -277,14 +277,14 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
    if (backup_raw_partition(v->fs_type, v->device, rawimg))
 	{
 	  ui_print("Failed!\n");
-	  ensure_path_unmounted(partition_path);
+	  //ensure_path_unmounted(partition_path);
 	  status = -1;
 	}
 	else
 	{
-	  ui_print("Success!");
+	  ui_print("Success!\n");
 	  ui_reset_text_col();
-	  ensure_path_unmounted(partition_path);
+	  //ensure_path_unmounted(partition_path);
 	  status = 0;
 	}
   }
@@ -300,6 +300,7 @@ int restore_partition(const char* partition, const char* PREFIX, int progress)
   strcpy(PREFIX2, PREFIX);
   printf("PREFIX: %s\nPREFIX2: %s\n", PREFIX, PREFIX2);
   
+  ensure_path_mounted(partition);
   
   char TAR_OPTS[5]="x";
   if (progress) strcat(TAR_OPTS, "v");
@@ -354,6 +355,7 @@ int restore_partition(const char* partition, const char* PREFIX, int progress)
     ensure_path_mounted(partition);
 	 //wipe first!    
     erase_volume(partition);
+    ensure_path_mounted(partition);
     
 	 if (strcmp(partition, ".android_secure") != 0)	 
 	 {	 
@@ -393,6 +395,7 @@ int restore_partition(const char* partition, const char* PREFIX, int progress)
 	
 	printf("TAR_OPTS: %s\nPREFIX: %s\npartition_name: %s\nEXTENSION: %s\npartition_path: %s\n", TAR_OPTS, PREFIX2, partition_name, EXTENSION, partition_path);
 
+	ensure_path_mounted(partition);
 	
 	const char tar_cmd[1024] = { NULL };
 	sprintf(tar_cmd, "tar %s %s/%s.%s -C %s", TAR_OPTS, PREFIX2, partition_name, EXTENSION, partition_path); 
@@ -418,15 +421,15 @@ int restore_partition(const char* partition, const char* PREFIX, int progress)
 	if (retstatus != 0)
 	{
 	  ui_print("Failed!\n");
-	  ensure_path_unmounted(partition_path);
+	  //ensure_path_unmounted(partition_path);
 	  status = -1;
 	} 
 	else
 	{
 	  
-	  ui_print("Success!");
+	  ui_print("Success!\n");
 	  ui_reset_text_col();
-	  ensure_path_unmounted(partition_path);
+	  //ensure_path_unmounted(partition_path);
 	  status = 0;
 	}
   }
@@ -448,17 +451,18 @@ int restore_partition(const char* partition, const char* PREFIX, int progress)
 	printf("restoring %s to %s...\n", rawimg, partition);
 	sprintf(flash_cmd, "flash_img %s %s", result, rawimg);
 	printf("flash_cmd: %s\n", flash_cmd);
+	ensure_path_mounted(partition);
     if (!__system(flash_cmd))
 	{
 	  ui_print("Failed!\n");
-	  ensure_path_unmounted(partition_path);
+	  //ensure_path_unmounted(partition_path);
 	  status = -1;
 	}
 	else
 	{
 	  ui_print("Success!");
 	  ui_reset_text_col();
-	  ensure_path_unmounted(partition_path);
+	  //ensure_path_unmounted(partition_path);
 	  status = 0;
 	}
   }

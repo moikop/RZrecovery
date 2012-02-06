@@ -1053,6 +1053,8 @@ int main (int argc, char **argv)
   if (status != INSTALL_SUCCESS /*|| ui_text_visible() */ )
 	  {
 	  	ensure_path_mounted("/system");
+	  	ensure_path_mounted("/data");
+	  	ensure_path_mounted("/cache");
 	    prompt_and_wait ();
 	  }
    
