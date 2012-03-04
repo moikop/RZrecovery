@@ -1,3 +1,4 @@
+#RZRecovery version 2.1.4
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
@@ -26,7 +27,8 @@ LOCAL_SRC_FILES := \
     unpackbootimg.c \
     mkbootfs.c \
     unyaffs.c \
-    mounts.c 
+    mounts.c \
+    popen.c 
 
 ##the world just isnt ready for API level 3 yet
 RECOVERY_API_VERSION := 2 
@@ -64,7 +66,7 @@ LOCAL_C_INCLUDES += system/extras/ext4_utils
 include $(BUILD_EXECUTABLE)
 
 ##recovery symlinks
-RECOVERY_LINKS := flash_image dump_image erase_image format mkfs.ext4 mkbootimg unpack_bootimg mkbootfs reboot_android unyaffs keytest compute_size compute_files list_files freespace
+RECOVERY_LINKS := flash_image dump_image erase_image format mkfs.ext4 mkbootimg unpack_bootimg mkbootfs reboot_android unyaffs keytest compute_size compute_files list_files freespace printfile
 RECOVERY_SYMLINKS := $(addprefix $(TARGET_RECOVERY_ROOT_OUT)/sbin/,$(RECOVERY_LINKS))
 $(RECOVERY_SYMLINKS): RECOVERY_BINARY := $(LOCAL_MODULE)
 $(RECOVERY_SYMLINKS): $(LOCAL_INSTALLED_MODULE)
@@ -97,6 +99,13 @@ LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
 LOCAL_SRC_FILES := $(LOCAL_MODULE)
 include $(BUILD_PREBUILT)
 
+include $(CLEAR_VARS)
+LOCAL_MODULE := dump_img
+LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
+LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
+LOCAL_SRC_FILES := $(LOCAL_MODULE)
+include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := nandroid-mobile.sh

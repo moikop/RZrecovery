@@ -6,14 +6,15 @@
 #include <string.h>
 
 #include "roots.h"
+#include "popen.h"
 
-long totalbytes = 0;
-long totalfiles = 0;
+uint64_t totalbytes = 0;
+uint64_t totalfiles = 0;
 int clearTotal = 0;
 int clearFilesTotal = 0;
 
 char** files_list;
-long list_position = 0;
+uint64_t list_position = 0;
 
 #define PATH_MAX 4096
 
@@ -37,7 +38,7 @@ void set_clearFilesTotal_intent(int value)
    clearFilesTotal = value;
 }
 
-long dirsize(const char* directory, int verbose)
+uint64_t dirsize(const char* directory, int verbose)
 {
   if (clearTotal) 
   {
@@ -51,7 +52,7 @@ long dirsize(const char* directory, int verbose)
   char pathname[PATH_MAX];
   DIR * dir; 
   //long total_items = 0;
-  long filesize = 0;
+  uint64_t filesize = 0;
   
   dir = opendir(directory);
   if (dir == NULL)
@@ -73,7 +74,7 @@ long dirsize(const char* directory, int verbose)
 	  }
 	  if (verbose) 
 	  {
-	    printf("%s/%s : %lld bytes\n", directory, de->d_name, s.st_size);
+	    printf("%s/%s : %llu bytes\n", directory, de->d_name, s.st_size);
 	  }
 	  filesize = s.st_size; //put file size into filesize variable
 	  totalbytes += filesize; //increment totalbytes
@@ -162,10 +163,41 @@ void listfiles(const char* directory)
   closedir(dir);
 }
 
-long compute_size(const char* directory, int verbose)
+long tarsize(const char* PREFIX, const char* FILENAME, const char* EXTENSION, const int COMPRESSED)
 {
-  long space = dirsize(directory, verbose);
-  printf("RETURNING: %ld\n", space);
+  char TAR_TVF[1024] = { NULL };
+  char *TVF_OPTS = NULL;
+  char files_in_tar[10] = { NULL };  
+  long result = NULL;  
+  if (COMPRESSED) TVF_OPTS = "tvzf";
+  else TVF_OPTS="tvf";
+	  
+  sprintf(TAR_TVF, "tar %s %s/%s.%s | wc -l", TVF_OPTS, PREFIX, FILENAME, EXTENSION);  
+  printf("TAR_TVF: %s\n", TAR_TVF);	  
+  
+  FILE* in=__popen(TAR_TVF, "r"); //use popen to execute the command
+  //check to be sure the operation succeeded
+  if (in == NULL)
+  {
+    printf("Null pointer! :(\n");
+    return -1;
+  }
+  fgets(files_in_tar, PATH_MAX-1, in); // fgets to grab the output
+  result = atol(files_in_tar);
+  int filesretstatus = __pclose(in);     
+  printf("File pclose exit code: %d\n", filesretstatus);
+  if (filesretstatus == 0)
+  {
+    printf("Number of files in tar: %ld\n", result);  
+    return result;
+  }
+  else return -1;
+}
+
+uint64_t compute_size(const char* directory, int verbose)
+{
+  uint64_t space = dirsize(directory, verbose);
+  printf("RETURNING: %llu\n", space);
   return space;
 }
 
@@ -198,11 +230,11 @@ int compute_size_main(int argc, char* argv[])
 
   int verbose = 0; //show or hide individual computations
 
-  long space = compute_size(argv[1], verbose);
+  uint64_t space = compute_size(argv[1], verbose);
   if (space != -1)
   {
     float space_mb = (float) space / 1024 / 1024;
-    printf("space occupied: %ld bytes\n", space);
+    printf("space occupied: %llu bytes\n", space);
     printf("(%.2f MB)\n", space_mb);
   }
   return 0;

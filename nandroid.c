@@ -22,6 +22,7 @@
 #include "nandroid.h"
 #include "install_menu.h"
 #include "dirsize.h"
+#include "popen.h"
 
 int reboot_afterwards;
 char timestamp[64];
@@ -97,19 +98,19 @@ void get_prefix(char partitions)
   const char PARTITIONS[6] = "";
   
   //identify directory with what partitions are going to be backed up:
-  int boot = partitions & BOOT;
-  int data = partitions & DATA;
-  int cache = partitions & CACHE;
-  int system = partitions & SYSTEM;
-  int asecure = partitions & ASECURE;
-  int sdext = partitions & SDEXT;
+  int do_boot = partitions & BOOT;
+  int do_data = partitions & DATA;
+  int do_cache = partitions & CACHE;
+  int do_system = partitions & SYSTEM;
+  int do_asecure = partitions & ASECURE;
+  int do_sdext = partitions & SDEXT;
   
-  if (boot) strcat(PARTITIONS, "B");
-  if (data) strcat(PARTITIONS, "D");
-  if (cache) strcat(PARTITIONS, "C");
-  if (system) strcat(PARTITIONS, "S");
-  if (asecure) strcat(PARTITIONS, "A");
-  if (sdext) strcat(PARTITIONS, "E");
+  if (do_boot) strcat(PARTITIONS, "B");
+  if (do_data) strcat(PARTITIONS, "D");
+  if (do_cache) strcat(PARTITIONS, "C");
+  if (do_system) strcat(PARTITIONS, "S");
+  if (do_asecure) strcat(PARTITIONS, "A");
+  if (do_sdext) strcat(PARTITIONS, "E");
   
   //timestamp generation
   char            fmt[64], timestamp[64];
@@ -119,8 +120,9 @@ void get_prefix(char partitions)
   gettimeofday(&tv, NULL);
   if((tm = localtime(&tv.tv_sec)) != NULL)
   {
-    //timestamp format 20111228-1444
-    strftime(fmt, sizeof fmt, "%Y%m%d-%H%M", tm);
+    //timestamp format 2011-12-28_1444
+    printf("about to make the timestamp...\n");
+    strftime(fmt, sizeof fmt, "%Y-%m-%d_%H%M", tm);
     snprintf(timestamp, sizeof timestamp, fmt, tv.tv_usec);
   }
 	
@@ -131,6 +133,7 @@ void get_prefix(char partitions)
   printf("TIMESTAMP: %s\n", timestamp);
  
   
+<<<<<<< HEAD
   /*
   int vers_length = strlen(ANDROID_VERSION);
   int i;
@@ -148,11 +151,30 @@ void get_prefix(char partitions)
   //build the prefix string
   char prefix[1024];
   sprintf(prefix, "%s/%s-%s", NANDROID_DIR, /*ANDROID_VERSION,*/ PARTITIONS, timestamp);
+=======
+  if (ANDROID_VERSION)
+  {  
+    int vers_length = strlen(ANDROID_VERSION);
+    int i;
+    for (i=0; i<vers_length; i++)
+    {
+      if (ANDROID_VERSION[i] == '\n') ANDROID_VERSION[i] = NULL; // no newline please
+    }
+    if (ANDROID_VERSION)
+    {
+      strcat(PARTITIONS,"-");
+    }
+  } 
+  else ANDROID_VERSION = "";
+  
+  //build the prefix string
+  char prefix[1024];
+  sprintf(prefix, "%s/%s-%s%s", NANDROID_DIR, timestamp, PARTITIONS, ANDROID_VERSION);
+>>>>>>> original/gingerbread
   
   strcpy(PREFIX, prefix);
   printf("internal prefix: %s\n", PREFIX); 
 }
-  
   
 int backup_partition(const char* partition, const char* PREFIX, int compress, int progress)
 { 
@@ -178,14 +200,12 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
   long totalfiles = 0;
   char totalfiles_string[7] = "";
   
-  
-  
   ui_print("Backing up %s... ", partition);
   char* partition_path;
   
 	if (strcmp(partition, ".android_secure") == 0)
 	{
-	  partition_path = calloc(strlen(get_storage_root()) + 1, sizeof(char));	  
+	  partition_path = calloc(strlen(get_storage_root()) + strlen(".android_secure") + 1, sizeof(char));	  
 	  sprintf(partition_path, "%s/.android_secure", get_storage_root());
 	  valid = 1;
 	}
@@ -196,7 +216,11 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
   if (valid == 1 || (strcmp(v->fs_type, "mtd") != 0 && strcmp(v->fs_type, "emmc") != 0 && strcmp(v->fs_type, "bml")))
   {
     printf("not mtd, emmc, or bml!\n");
-    ensure_path_mounted(partition);
+    if (ensure_path_mounted(partition) && strcmp(partition, ".android_secure") != 0)
+    {
+      printf("Error mounting %s!\n", partition);
+      return -1;
+    }
     char* partition_name;
     
 	 if (strcmp(partition, ".android_secure") != 0)	 
@@ -215,7 +239,12 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
 	{
 	  ui_show_indeterminate_progress();
 	  printf("Progress bar enabled. Computing number of items in %s...\n", partition_path);
-	  totalfiles = compute_files(partition_path) + 1;
+	  totalfiles = compute_files(partition_path) + 1;	  
+	  if (strcmp(partition,"/data") == 0 && strcmp(get_storage_root(),"/data/media") == 0)
+	  {	  
+		 printf("/data/media is sdcard - do not include in the count.\n");	    
+	    totalfiles -= compute_files("/data/media");
+	  }
 	  printf("totalfiles: %ld\n", totalfiles);
 	  sprintf(totalfiles_string, "%ld", totalfiles);
 	  set_clearFilesTotal_intent(1);
@@ -223,7 +252,7 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
 	
 	int status = 0;
 	char* EXCLUSION;	
-	if (strcmp(partition,"/data") ==0) EXCLUSION="--exclude ./media";
+	if (strcmp(partition,"/data") == 0 && strcmp(get_storage_root(),"/data/media") == 0) EXCLUSION="--exclude ./media";
 	else EXCLUSION = "";
 	
 	char tar_cmd[1024];
@@ -231,22 +260,23 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
 	printf("tar_cmd: %s\n", tar_cmd);
 	
 	//use popen to capture output from system call and act on it
-	FILE* in=popen(tar_cmd, "r");
+	FILE* in=__popen(tar_cmd, "r");
 	
 	char temp[PATH_MAX];
 	long counter = 0;
-	if (progress) ui_show_progress(1.0, 0);	
+	if (progress) ui_show_progress(1.0, 0);
+	else ui_show_indeterminate_progress();	
 	while (fgets(temp, PATH_MAX-1, in) != NULL)
 	{	    
 	  if (progress)
 	  { 
-	    printf("COUNTER: %ld / %ld\n", counter, totalfiles);	      
+	    printf(" %ld / %ld ", counter, totalfiles);	      
 	    ui_set_progress((float)counter / (float)totalfiles);
 	    counter++;
 	  }	
 	}
-	if (progress) ui_reset_progress();
-   int retstatus = pclose(in);	
+	ui_reset_progress();
+   int retstatus = __pclose(in);	
 	
 	if (retstatus != 0)
 	{
@@ -256,7 +286,6 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
 	} 
 	else
 	{
-	  
 	  ui_print("Success!");
 	  ui_reset_text_col();
 	  //ensure_path_unmounted(partition_path);
@@ -265,7 +294,7 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
   }
   else //must be mtd, bml, or emmc - dump raw
   {
-   if (progress) ui_show_indeterminate_progress();
+   ui_show_indeterminate_progress();
    printf("Must be raw...\n");
    char rawimg[PATH_MAX];
 	strcpy(rawimg, PREFIX);
@@ -273,8 +302,12 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
 	strcat(rawimg, ".img");
 	
 	printf("backing up %s to %s\n", partition, rawimg);
+	
+	char dump_cmd[512] = { NULL };
+	sprintf(dump_cmd, "dump_img %s %s", partition, rawimg);
+	printf("dump_cmd: %s\n", dump_cmd);
 
-   if (backup_raw_partition(v->fs_type, v->device, rawimg))
+   if (!__system(dump_cmd))
 	{
 	  ui_print("Failed!\n");
 	  //ensure_path_unmounted(partition_path);
@@ -288,7 +321,7 @@ int backup_partition(const char* partition, const char* PREFIX, int compress, in
 	  status = 0;
 	}
   }
-  if (progress) ui_reset_progress();
+  ui_reset_progress();
   return status;
 }  
 
@@ -302,9 +335,8 @@ int restore_partition(const char* partition, const char* PREFIX, int progress)
   
   ensure_path_mounted(partition);
   
-  char TAR_OPTS[5]="x";
-  if (progress) strcat(TAR_OPTS, "v");
-  char* EXTENSION = NULL;
+
+  char* EXTENSION = calloc(strlen(".tar.gz") + 1, sizeof(char));
   int compress;
   char tarfilename[PATH_MAX];
   char tgzfilename[PATH_MAX];
@@ -319,46 +351,72 @@ int restore_partition(const char* partition, const char* PREFIX, int progress)
     sprintf(tgzfilename, "%s%s.tar.gz", PREFIX, partition);
   }
   
-  if (access(tgzfilename, F_OK) != -1 && access(tarfilename, F_OK) == -1) compress = 1;
-  if (access(tarfilename, F_OK) != -1 && access(tgzfilename, F_OK) == -1) compress = 0;
-  if (compress) {
-    strcat(TAR_OPTS, "z");
-	EXTENSION = "tar.gz";
+  //log the names for debugging purposes
+  printf("tarfilename: %s\ntgzfilename: %s\n", tarfilename, tgzfilename);
+  
+  if (access(tgzfilename, F_OK) != -1 && access(tarfilename, F_OK) == -1) 
+  {
+	 printf("%s exists.\n%s does not.\n", tgzfilename, tarfilename);    
+    compress = 1;
+  }  
+  if (access(tarfilename, F_OK) != -1 && access(tgzfilename, F_OK) == -1) 
+  {
+	 printf("%s exists.\n%s does not.\n", tarfilename, tgzfilename);      
+    compress = 0;
+  } 
+  
+  if (compress) 
+  {
+	 EXTENSION = "tar.gz";
   }
   else
   {
     EXTENSION = "tar";
   }
-  strcat(TAR_OPTS, "f");
   int status;
   int valid = 0;
-  long totalfiles = 0;
-  char totalfiles_string[PATH_MAX] = { NULL };
   
   ui_print("Restoring %s... ", partition);
   
-  const char* partition_path = NULL;
+  const char* restore_path = NULL;
+  const char* restore_path2 = NULL;
   const char* partition_name = NULL;
   
+  restore_path = calloc(strlen(get_storage_root()) + strlen(".android_secure") + 1, sizeof(char));
+  restore_path2 = calloc(strlen(get_storage_root()) + strlen(".android_secure") + 1, sizeof(char)); 
+  
 	if (strcmp(partition, ".android_secure") == 0)
-	{
-	  partition_path = calloc(strlen(get_storage_root()) + 1, sizeof(char));	  
-	  sprintf(partition_path, "%s/.android_secure", get_storage_root());
+	{	  
+	  sprintf(restore_path, "%s/.android_secure", get_storage_root());
 	  valid = 1;
 	}
-	else partition_path = partition;
-	printf("partition_path: %s\n", partition_path);
+	else restore_path = partition;
+	
+	strcpy(restore_path2, restore_path); 
+	
+	printf("restore_path: %s\n", restore_path);
+	
   
   if (valid == 1 || (strcmp(v->fs_type, "mtd") != 0 && strcmp(v->fs_type, "emmc") != 0 && strcmp(v->fs_type, "bml")))
   {
+    if (access(tgzfilename, F_OK) == -1 && access(tarfilename, F_OK) == -1) 
+    {
+	   printf("%s backup does not exist. skipping.\n", partition);
+	   return 0;
+    } 
     printf("not mtd, emmc, or bml!\n");
+<<<<<<< HEAD
     ensure_path_mounted(partition);
 	 //wipe first!    
     erase_volume(partition);
     ensure_path_mounted(partition);
     
+=======
+     
+>>>>>>> original/gingerbread
 	 if (strcmp(partition, ".android_secure") != 0)	 
 	 {	 
+	   ensure_path_mounted(get_storage_root());
 	   char* strptr = strstr(partition, "/") + 1; 
 	   if (strptr)
 	   {
@@ -368,59 +426,87 @@ int restore_partition(const char* partition, const char* PREFIX, int progress)
 	   printf("partition_name: %s\n", partition_name);
 	 }
 	 else partition_name="secure";
-		
+	 	   	 
+	 if (strcmp(partition, ".android_secure") != 0)	
+	 {	
+	   //wipe first! 
+	   ensure_path_unmounted(partition);   
+		printf("Wiping %s...\n", partition);      
+      erase_volume(partition);	 
+      printf("Mounting %s... ", partition); 
+	   ensure_path_mounted(partition);
+	   if (!is_path_mounted(partition))
+	   {
+	     printf("Error!\n");    
+	     ui_print("Failed!\n");
+	     return -1;
+	   }
+	   else printf("Success!\n", partition);	   
+	 }	
+	 
+   long totalfiles = 0;
 	if (progress) 
 	{  
 	  printf("Progress bar enabled. Computing number of items in %s.%s...\n", partition_name, EXTENSION);
-	  if (progress) ui_show_indeterminate_progress();
-	  char TAR_TVF[1024] = { NULL };
-	  char *TVF_OPTS = NULL;
-	  if (compress) TVF_OPTS = "tvzf";
-	  else TVF_OPTS="tvf";
-	  
-	  sprintf(TAR_TVF, "tar %s %s/%s.%s | wc -l", TVF_OPTS, PREFIX, partition_name, EXTENSION); 
-	  printf("partition_name: %s\n", partition_name);	  
-	  printf("TAR_TVF: %s\n", TAR_TVF);	  
-     char temp[PATH_MAX] = { NULL };
-     
-     FILE* in=popen(TAR_TVF, "r"); //use popen to execute the command
-     fgets(totalfiles_string, PATH_MAX-1, in); // fgets to grab the output
-     printf("totalfiles: %s\n", totalfiles_string);
-     totalfiles = atoi(totalfiles_string);	  
-     TVF_OPTS=NULL;
-	  int filesretstatus = pclose(in);     
-     printf("File pclose exit code: %d\n", filesretstatus);
-     set_clearFilesTotal_intent(1);
+	  ui_show_indeterminate_progress();	  	  
+     totalfiles = tarsize(PREFIX, partition_name, EXTENSION, compress);
+     if (totalfiles != -1)
+     {
+       printf("totalfiles received from tarsize(): %ld\n", totalfiles);  
+	    ui_reset_progress();	  
+       set_clearFilesTotal_intent(1);
+     }
+     else 
+     {
+       printf("Unable to count the files in %s.%s!\n", partition_name, EXTENSION);
+ 	    printf("Turning off progress bars for this operation. (Not that it will work anyway - we can hope though...)\n");         
+       progress = 0;
+     }
 	}
+   char TAR_OPTS[5]="x";
+   if (progress) strcat(TAR_OPTS, "v");
+   if (compress) strcat(TAR_OPTS, "z");
+   strcat(TAR_OPTS, "f");
+   
 	
-	printf("TAR_OPTS: %s\nPREFIX: %s\npartition_name: %s\nEXTENSION: %s\npartition_path: %s\n", TAR_OPTS, PREFIX2, partition_name, EXTENSION, partition_path);
+	printf("TAR_OPTS: %s\nPREFIX: %s\npartition_name: %s\nEXTENSION: %s\nrestore_path: %s\n", TAR_OPTS, PREFIX2, partition_name, EXTENSION, restore_path2);
 
 	ensure_path_mounted(partition);
 	
 	const char tar_cmd[1024] = { NULL };
-	sprintf(tar_cmd, "tar %s %s/%s.%s -C %s", TAR_OPTS, PREFIX2, partition_name, EXTENSION, partition_path); 
+	
+	sprintf(tar_cmd, "tar %s %s/%s.%s -C %s", TAR_OPTS, PREFIX2, partition_name, EXTENSION, restore_path2); 
 	printf("tar_cmd: %s\n", tar_cmd);
 
 	//use popen to capture output from system call and act on it
-	FILE* in=popen(tar_cmd, "r");
+	FILE* in=__popen(tar_cmd, "r");
+	if (in == NULL)
+   {
+     printf("Null pointer! :(\n");
+	  ui_print("Failed!\n");     
+     return -1;
+   }
 	char temp[PATH_MAX];
 	long counter = 0;
 	if (progress) ui_show_progress(1.0, 0);
+	else ui_show_indeterminate_progress();
 	while (fgets(temp, PATH_MAX-1, in) != NULL)
 	{	    
 	  if (progress)
 	  { 
-	    printf("COUNTER: %ld / %ld\n", counter, totalfiles);	      
+	    printf(" %ld / %ld ", counter, totalfiles);     
 	    ui_set_progress((float)counter / (float)totalfiles);
 	    counter++;
 	  }	
 	}
-	if (progress) ui_reset_progress();   
-	int retstatus = pclose(in);
+	ui_reset_progress();   
+	int retstatus = __pclose(in); 
+   printf("TAR return status: %d\n", retstatus);
 	
 	if (retstatus != 0)
 	{
 	  ui_print("Failed!\n");
+<<<<<<< HEAD
 	  //ensure_path_unmounted(partition_path);
 	  status = -1;
 	} 
@@ -430,19 +516,28 @@ int restore_partition(const char* partition, const char* PREFIX, int progress)
 	  ui_print("Success!\n");
 	  ui_reset_text_col();
 	  //ensure_path_unmounted(partition_path);
+=======
+	  if (strcmp(partition, ".android_secure") != 0) ensure_path_unmounted(restore_path);
+	  status = -1;
+	} 
+	else
+	{  
+	  ui_print("Success!");
+	  ui_reset_text_col();
+	  if (strcmp(partition, ".android_secure") != 0) ensure_path_unmounted(restore_path);
+>>>>>>> original/gingerbread
 	  status = 0;
 	}
   }
   else //must be mtd, bml, or emmc - restore raw
   {
     printf("must be raw...\n");
-   if (progress) ui_show_indeterminate_progress(); 
+   ui_show_indeterminate_progress(); 
 	//must pull the / off the partition name for flash_img...
 	char* strptr = strstr(partition, "/") +  1;
 	char* result = calloc(strlen(strptr) + 1, sizeof(char));
 	strcpy(result, strptr);  
 	
-
 	char rawimg[PATH_MAX];
 	char flash_cmd[PATH_MAX];
 	strcpy(rawimg, PREFIX);
@@ -455,18 +550,27 @@ int restore_partition(const char* partition, const char* PREFIX, int progress)
     if (!__system(flash_cmd))
 	{
 	  ui_print("Failed!\n");
+<<<<<<< HEAD
 	  //ensure_path_unmounted(partition_path);
+=======
+	  ensure_path_unmounted(restore_path);
+>>>>>>> original/gingerbread
 	  status = -1;
 	}
 	else
 	{
 	  ui_print("Success!");
 	  ui_reset_text_col();
+<<<<<<< HEAD
 	  //ensure_path_unmounted(partition_path);
+=======
+	  ensure_path_unmounted(restore_path);
+>>>>>>> original/gingerbread
 	  status = 0;
 	}
   }
-  if (progress) ui_reset_progress();
+  printf("restore_path: %s\n", restore_path);
+  ui_reset_progress();
   return status;
 } 
 
@@ -503,12 +607,12 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
   int reboot = get_reboot_after();
   int failed = 0;
 
-  int boot = partitions & BOOT;
-  int data = partitions & DATA;
-  int cache = partitions & CACHE;
-  int system = partitions & SYSTEM;
-  int asecure = partitions & ASECURE;
-  int sdext = partitions & SDEXT;
+  int do_boot = partitions & BOOT;
+  int do_data = partitions & DATA;
+  int do_cache = partitions & CACHE;
+  int do_system = partitions & SYSTEM;
+  int do_asecure = partitions & ASECURE;
+  int do_sdext = partitions & SDEXT;
   
   if (strcmp(operation, "backup") == 0)
   {
@@ -531,7 +635,7 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
 	long totalbytes = 0;
 	ensure_path_mounted(STORAGE_ROOT);
 	
-	if (system) 
+	if (do_system) 
 	{
 	  ui_print("/system...");
 	  ensure_path_mounted("/system");
@@ -539,7 +643,7 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
 	  totalbytes += bytesrequired;
 	  ui_reset_text_col();
 	}
-	if (asecure) 
+	if (do_asecure) 
 	{
 	  ui_print("android_secure...");
 	  char SECURE_PATH[1024];
@@ -550,7 +654,7 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
 	  totalbytes += bytesrequired;
 	  ui_reset_text_col();
 	}
-	if (sdext) 
+	if (do_sdext) 
 	{
 	  ui_print("/sdext...");
 	  ensure_path_mounted("/sd-ext");
@@ -558,7 +662,7 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
 	  totalbytes += bytesrequired;
 	  ui_reset_text_col();
 	}	
-	if (data)
+	if (do_data)
 	{	
 	  ui_print("/data...");
 	  ensure_path_mounted("/data");
@@ -578,7 +682,7 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
 	  bytesrequired -= compute_size("/data/media", 0);
 	  ui_reset_text_col();
 	}
-	if (cache) 
+	if (do_cache) 
 	{
 	  ui_print("/cache...");
 	  ensure_path_mounted("/cache");
@@ -588,9 +692,16 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
 	}
 		
 	long mb_required =  bytesrequired / 1024 / 1024;
-	if (show_progress) ui_reset_progress();
+	ui_reset_progress();
 	ui_print("~%ld MB required\n", mb_required);
 	ui_print("%ld MB available\n", available_mb);
+	
+	if (available_mb < mb_required)
+	{
+	  ui_print("Insufficient space to create backup.\n Aborting.\n");
+	  set_clearTotal_intent(1); //don't want it to double up on the estimate next run!
+	  return;
+	}	
 	  
     char tmp[PATH_MAX];
     sprintf(tmp, "mkdir -p %s", PREFIX);
@@ -603,15 +714,15 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
 	  ui_print("SD Card will thank you :)\n\n");
 	}
 	
-    if (boot) 
+    if (do_boot) 
 	{
 	  if (backup_partition("/boot", PREFIX, compress, show_progress)) failed = 1;
 	}
-	if (system) 
+	if (do_system) 
 	{
 	  if (backup_partition("/system", PREFIX, compress, show_progress)) failed = 1;
 	}
-    if (data) 
+    if (do_data) 
 	{
 	  if (backup_partition("/data", PREFIX, compress, show_progress)) failed = 1;
 	  if (volume_present("/datadata"))
@@ -619,17 +730,17 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
 	    if (backup_partition("/datadata", PREFIX, compress, show_progress)) failed = 1;
 	  }
 	}
-    if (cache) 
+    if (do_cache) 
 	{
 	  if (backup_partition("/cache", PREFIX, compress, show_progress)) failed = 1;
 	}
-    if (asecure) 
+    if (do_asecure) 
     {
 	  printf("About to back up .android_secure...\n");
 	  if (backup_partition(".android_secure", PREFIX, compress, show_progress)) failed = 1;
     }
 
-    if (sdext) 
+    if (do_sdext) 
 	{
 	  if (backup_partition("/sd-ext", PREFIX, compress, show_progress)) failed = 1;
 	}
@@ -649,15 +760,15 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
 	printf("PREFIX: %s\n", PREFIX);
 	printf("START: %ld\n", starttime);
 	
-    if (boot) 
+    if (do_boot) 
 	{
 	  if (restore_partition("/boot", PREFIX, show_progress)) failed = 1;
-	}    
-	if (system) 
+	}  
+	if (do_system) 
 	{
-	  if (restore_partition("/system", PREFIX, show_progress)) failed = 1;
-	}
-    if (data) 
+	  if (restore_partition("/system", PREFIX, show_progress)) failed = 1; 
+	}	  
+    if (do_data) 
 	{
 	  if (restore_partition("/data", PREFIX, show_progress)) failed = 1;
 	  if (volume_present("/datadata"))
@@ -665,20 +776,22 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
 	    if (restore_partition("/datadata", PREFIX, show_progress)) failed = 1;
 	  }
 	}
-    if (cache) 
+    if (do_cache) 
 	{
 	  if (restore_partition("/cache", PREFIX, show_progress)) failed = 1;
 	}
-    if (asecure) 
+    if (do_asecure) 
     {
 	  printf("About to restore .android_secure...\n");
 	  if (restore_partition(".android_secure", PREFIX, show_progress)) failed = 1;
     }
-    if (sdext) 
+    if (do_sdext) 
 	{
 	  if (restore_partition("/sd-ext", PREFIX, show_progress)) failed = 1;
 	}
   }
+  ui_reset_text_col();
+  ui_print("Finished.\n");
   printf("%s finished.\n", operation);
   endtime = time(NULL);
   printf("END: %ld\n", endtime);
@@ -688,7 +801,6 @@ void nandroid_native(const char* operation, char* subname, char partitions, int 
   
   if (failed != 1) if (reboot) reboot_android();
   
-  //this part isnt quite working yet - gets 0 byte filesizes in PREFIX?
   if (strcmp(operation, "backup") == 0) 
   {
     ensure_path_mounted(STORAGE_ROOT);
