@@ -1055,6 +1055,7 @@ int main (int argc, char **argv)
 	  	ensure_path_mounted("/system");
 	  	ensure_path_mounted("/data");
 	  	ensure_path_mounted("/cache");
+	  	ensure_path_mounted("/sdcard");
 	    prompt_and_wait ();
 	  }
    

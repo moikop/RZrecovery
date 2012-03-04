@@ -48,6 +48,7 @@ int get_reboot_after()
   return reboot_nandroid;
 }
 
+/*
 void
 nandroid(const char* operation, char *subname, char partitions, int show_progress, int compress)
 {
@@ -201,6 +202,7 @@ nandroid(const char* operation, char *subname, char partitions, int show_progres
   ensure_path_unmounted(backuppath);  
   ui_reset_progress ();
 }
+*/
 
 void
 nandroid_adv_r_choose_file (char *filename, char *nandroid_folder)
@@ -902,6 +904,7 @@ show_nandroid_menu ()
   ensure_path_mounted("/system");
   ensure_path_mounted("/data");
   ensure_path_mounted("/cache");
+  ensure_path_mounted("/sdcard");
   if (volume_present("/sd-ext"))
   {
     set_sdext();
